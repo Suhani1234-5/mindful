@@ -17,7 +17,7 @@ function App() {
     setSummary("");
 
     try {
-      const response = await fetch("https://mindful-w6ob.onrender.com", {
+      const response = await fetch("https://mindful-w6ob.onrender.com/summarize", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
