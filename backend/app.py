@@ -107,12 +107,18 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY is missing! Add it to your .env file.")
 
-@app.route("/", methods=["GET", "OPTIONS"])
+@app.route("/", methods=["GET", "POST", "OPTIONS"])
 def health_check():
-    """Health check endpoint"""
+    """Health check endpoint and fallback for summarize requests"""
     if request.method == "OPTIONS":
         return '', 200
-    return jsonify({"status": "OK", "message": "Mindful AI Summarizer Backend is running"})
+    
+    if request.method == "GET":
+        return jsonify({"status": "OK", "message": "Mindful AI Summarizer Backend is running"})
+    
+    # Handle POST requests to root (fallback for old frontend versions)
+    if request.method == "POST":
+        return summarize()
 
 @app.route("/summarize", methods=["POST", "OPTIONS"])
 def summarize():
