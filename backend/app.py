@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)  # Allow React frontend / Thunder Client access
+CORS(app, origins=["https://mindful-peach.vercel.app"])  # Allow React frontend / Thunder Client access
 
 # 🔑 Get Gemini API key from .env
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
