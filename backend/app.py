@@ -8,7 +8,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, origins=["https://mindful-peach.vercel.app"])  # Allow React frontend / Thunder Client access
+
+# ✅ Proper CORS setup for Vercel frontend and preflight requests
+CORS(
+    app,
+    origins=["https://mindful-peach.vercel.app"],  # your Vercel frontend
+    methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"]
+)
 
 # 🔑 Get Gemini API key from .env
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -16,8 +23,12 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY is missing! Add it to your .env file.")
 
-@app.route("/summarize", methods=["POST"])
+@app.route("/summarize", methods=["POST", "OPTIONS"])
 def summarize():
+    # ✅ Handle preflight OPTIONS request
+    if request.method == "OPTIONS":
+        return '', 200
+
     data = request.get_json()
     text = data.get("text", "")
 
@@ -30,7 +41,7 @@ def summarize():
 
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {GEMINI_API_KEY}"  # Must use Bearer token
+            "Authorization": f"Bearer {GEMINI_API_KEY}"
         }
 
         payload = {
@@ -43,7 +54,6 @@ def summarize():
             "temperature": 0.5
         }
 
-        # 📡 Send POST request to Gemini API
         response = requests.post(url, headers=headers, json=payload)
 
         if response.status_code != 200:
@@ -53,11 +63,10 @@ def summarize():
                 "details": response.text
             }), 500
 
-        # ✅ Parse summary
+        # Parse summary
         result = response.json()
         summary = result.get("choices", [{}])[0].get("message", {}).get("content")
 
-        # Fallback if the above fails
         if not summary:
             summary = result.get("responseText", "")
 
@@ -68,8 +77,6 @@ def summarize():
         return jsonify({"error": str(e)}), 500
 
 
-# if __name__ == "__main__":
-#     app.run(debug=True)
 if __name__ == "__main__":
     # ✅ Bind to 0.0.0.0 and use Render's PORT
     port = int(os.environ.get("PORT", 5000))
